@@ -1,18 +1,26 @@
 require 'zengin_code'
 
 class ZenginCode::Bank
-  @banks = {}
+
 
   class << self
     def [](code)
-      @banks[code]
+      all[code]
     end
 
     def []=(code, bank)
+      @banks ||= {}
       @banks[code] = bank
     end
 
     def all
+      if @banks.nil?
+        @banks = {}
+        json = JSON.load(File.read(ZenginCode::DATA_DIR.join('banks.json')))
+        json.values.each do |bank_data|
+          new(bank_data)
+        end
+      end
       @banks
     end
   end
@@ -23,8 +31,20 @@ class ZenginCode::Bank
     @kana = options['kana']
     @hira = options['hira']
     @roma = options['roma']
-    @branches = {}
-    self.class[code] = self
+    self.class.send(:[]=, code, self)
   end
-  attr_reader :code, :name, :kana, :hira, :roma, :branches
+
+  attr_reader :code, :name, :kana, :hira, :roma
+
+  def branches
+    if @branches.nil?
+      @branches = {}
+      json = JSON.load(File.read(ZenginCode::DATA_DIR.join("branches/#{code}.json")))
+      json.values.each do |branch_data|
+        branch = ZenginCode::Branch.new(self, branch_data)
+        @branches[branch.code] = branch
+      end
+    end
+    @branches
+  end
 end
