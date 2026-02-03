@@ -14,12 +14,13 @@ class ZenginCode::Bank
     end
 
     def all
-      if @banks.nil?
-        @banks = {}
+      unless @data_loaded
+        @banks ||= {}
         json = JSON.load(File.read(ZenginCode::DATA_DIR.join('banks.json')))
         json.values.each do |bank_data|
           new(bank_data)
         end
+        @data_loaded = true
       end
       @banks
     end
